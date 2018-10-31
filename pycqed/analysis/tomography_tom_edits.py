@@ -1013,6 +1013,8 @@ class Tomo_Multiplexed(ma.MeasurementAnalysis):
         # print('<H2>',mean_h2)
         # print('<H12>',mean_h12)
 
+        # this means beta_II = 0
+        # refered to as Offset subrstraction in Julia Cramer's MSc Thesis
         avg_h1 -= mean_h1
         avg_h2 -= mean_h2
         avg_h12 -= mean_h12
@@ -1027,9 +1029,12 @@ class Tomo_Multiplexed(ma.MeasurementAnalysis):
         scale_h2 = (h2_00-h2_01+h2_10-h2_11)/4
         scale_h12 = (h12_00+h12_11-h12_01-h12_10)/4
         """
-        scale_h1 = (h1_00+h1_01-h1_10-h1_11)/4
-        scale_h2 = (h2_00-h2_01+h2_10-h2_11)/4
-        scale_h12 = (h12_00-h12_01-h12_10+h12_11)/4
+        # 1st step of rescaling:
+        # SETTING SIGNALS ON EACH CHANNEL TO SAME LEVEL.
+        """
+        scale_h1 = (h1_00+h1_01-h1_10-h1_11)/4 # CONTRAST CH1
+        scale_h2 = (h2_00-h2_01+h2_10-h2_11)/4 # CONTRAST CH2
+        scale_h12 = (h12_00-h12_01-h12_10+h12_11)/4 # CONTRAST CH3
         scale_h_list = [scale_h1, scale_h2, scale_h12]
         err_scale_h_list = [scale_h * (1 - scale_h) /
                             np.sqrt(num_measurements*28)
@@ -1081,6 +1086,9 @@ class Tomo_Multiplexed(ma.MeasurementAnalysis):
         std_h12_10 = np.std(avg_h12[50:50+7])
         std_h12_11 = np.std(avg_h12[57:-1])
 
+        # 2nd step
+        # ADJUST NOISE TO BE THE SAME IN ABSOLUTE AMPLITUDE
+
         std_h1 = np.mean([std_h1_00, std_h1_01, std_h1_10, std_h1_11])
         std_h2 = np.mean([std_h2_00, std_h2_01, std_h2_10, std_h2_11])
         std_h12 = np.mean([std_h12_00, std_h12_01, std_h12_10, std_h12_11])
@@ -1108,6 +1116,7 @@ class Tomo_Multiplexed(ma.MeasurementAnalysis):
         # DEACTIVATING NOISE SCALING HERE
 
         fac = np.mean([std_h1, std_h2, std_h12])
+        # IF STATEMENT SUCH THAT IN CASE OF NO NOISE, NOTHING HAPPENS
         if ((std_h1!=0) and (std_h2!=0) and (std_h12!=0)):
             avg_h1 *= fac/std_h1
             avg_h2 *= fac/std_h2
@@ -1118,7 +1127,6 @@ class Tomo_Multiplexed(ma.MeasurementAnalysis):
             err_avg_h_list = [err_avg_h * 0 for err_avg_h, std_h in zip(
                 err_avg_h_list, std_h_list)]
 
-
         # print('########### FACTORS ###########')
         # print('factor 1',fac/std_h1)
         # print('factor 2',fac/std_h2)
@@ -1128,7 +1136,7 @@ class Tomo_Multiplexed(ma.MeasurementAnalysis):
         # avg_h1 *= fac_h1
         # avg_h2 *= fac_h2
         # avg_h12 *= fac_h12
-
+        """
         h1_00 = np.mean(avg_h1[36:36+7])
         h1_01 = np.mean(avg_h1[43:43+7])
         h1_10 = np.mean(avg_h1[50:50+7])

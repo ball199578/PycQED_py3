@@ -975,3 +975,106 @@ def depletion_allxy(qubit_idx: int,
     p.filename = join(p.output_dir, p.name + '.qisa')
     return p
 
+
+def ef_rabi_seq(q0: int,
+                amps: list,
+                platf_cfg: str,
+                recovery_pulse: bool=True,
+                add_cal_points: bool=True):
+    """
+    Sequence used to calibrate pulses for 2nd excited state (ef/12 transition)
+    Timing of the sequence:
+    q0:   --   X180 -- X12 -- (X180) -- RO
+    Args:
+        q0      (str): name of the addressed qubit
+        amps   (list): amps for the two state pulse, note that these are only
+            used to label the kernels. Load the pulse in the LutMan
+        recovery_pulse (bool): if True adds a recovery pulse to enhance
+            contrast in the measured signal.
+    """
+    if len(amps) > 18:
+        raise ValueError('Only 18 free codewords available for amp pulses')
+    platf = Platform('OpenQL_Platform', platf_cfg)
+    p = Program(pname="ef_rabi_seq",
+                nqubits=platf.get_qubit_number(),
+                p=platf)
+    # These angles correspond to special pi/2 pulses in the lutman
+    for i, amp in enumerate(amps):
+        # cw_idx corresponds to special hardcoded pulses in the lutman
+        cw_idx = i + 2
+
+        k = Kernel("ef_A{}".format(amp), p=platf)
+        k.prepz(q0)
+        k.gate('rx180', q0)
+        k.gate('cw_{:02}'.format(cw_idx), q0)
+        if recovery_pulse:
+            k.gate('rx180', q0)
+        k.measure(q0)
+        p.add_kernel(k)
+    if add_cal_points:
+        p = add_single_qubit_cal_points(p, platf=platf, qubit_idx=q0)
+    with suppress_stdout():
+        p.compile()
+    # attribute get's added to program to help finding the output files
+    p.output_dir = ql.get_output_dir()
+    p.filename = join(p.output_dir, p.name + '.qisa')
+
+    if add_single_qubit_cal_points:
+        cal_pts_idx = [amps[-1]+.1, amps[-1]+.15,
+                       amps[-1]+.2, amps[-1]+.25]
+    else:
+        cal_pts_idx = []
+
+    p.sweep_points = np.concatenate([amps, cal_pts_idx])
+    p.set_sweep_points(p.sweep_points, len(p.sweep_points))
+    return p
+
+
+
+
+def off_ge_ef(qubit_idx: int, initialize: bool, platf_cfg: str):
+    """
+    Performs an 'off_on' sequence on the qubit specified.
+        off: (RO) - prepz -      - RO
+        on:  (RO) - prepz - x180 - RO
+    Args:
+        qubit_idx (int) :
+        pulse_comb (str): What pulses to play valid options are
+            "off", "on", "off_on"
+        initialize (bool): if True does an extra initial measurement to
+            post select data.
+        platf_cfg (str) : filepath of OpenQL platform config file
+
+    Pulses can be optionally enabled by putting 'off', respectively 'on' in
+    the pulse_comb string.
+    """
+    platf = Platform('OpenQL_Platform', platf_cfg)
+    p = Program(pname="off_ge_ef", nqubits=platf.get_qubit_number(),
+                p=platf)
+    # # Off
+    k = Kernel("off", p=platf)
+    k.prepz(qubit_idx)
+    k.gate("wait", [qubit_idx], 80)
+    k.measure(qubit_idx)
+    p.add_kernel(k)
+
+    k = Kernel("on", p=platf)
+    k.prepz(qubit_idx)
+    k.gate('rx180', qubit_idx)
+    k.gate("wait", [qubit_idx], 40)
+    k.measure(qubit_idx)
+    p.add_kernel(k)
+
+    k = Kernel("on", p=platf)
+    k.prepz(qubit_idx)
+    k.gate('rx180', qubit_idx)
+    k.gate('cw_02', qubit_idx)
+    k.measure(qubit_idx)
+    p.add_kernel(k)
+
+    with suppress_stdout():
+        p.compile(verbose=False)
+    # attribute get's added to program to help finding the output files
+    p.output_dir = ql.get_output_dir()
+    p.filename = join(p.output_dir, p.name + '.qisa')
+    return p

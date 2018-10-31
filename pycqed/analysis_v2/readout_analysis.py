@@ -148,7 +148,7 @@ class Singleshot_Readout_Analysis(ba.BaseDataAnalysis):
                                               **guess0)
                 fitres1 = gauss2D_model_1.fit(data=H1.transpose(),  x=x2d, y=y2d,
                                               **guess1)
-                
+
                 fr0 = fitres0.best_values
                 fr1 = fitres1.best_values
                 x0 = fr0['center_x']
@@ -187,11 +187,12 @@ class Singleshot_Readout_Analysis(ba.BaseDataAnalysis):
         self.proc_data_dict['shots_xunit'] = unit
         self.proc_data_dict['eff_int_voltages'] = eff_sh
         self.proc_data_dict['nr_shots'] = [len(eff_sh[0]), len(eff_sh[1])]
+        print(eff_sh)
         sh_min = min(np.min(eff_sh[0]), np.min(eff_sh[1]))
         sh_max = max(np.max(eff_sh[0]), np.max(eff_sh[1]))
         data_range = (sh_min, sh_max)
-        print(shots)
-        print(eff_sh)
+        # print(shots)
+        # print(eff_sh)
         eff_sh_sort = [np.sort(eff_sh[0]), np.sort(eff_sh[1])]
         x0, n0 = np.unique(eff_sh_sort[0], return_counts=True)
         cumsum0 = np.cumsum(n0)
