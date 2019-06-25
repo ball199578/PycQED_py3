@@ -947,20 +947,20 @@ class QWG_VSM_MW_LutMan(AWG8_VSM_MW_LutMan):
             self=self,
             regenerate_waveforms=regenerate_waveforms, stop_start=stop_start)
 
-    def _add_channel_params(self):
-        # all channels are used and hardcoded in functionality
-        pass
+    # def _add_channel_params(self):
+    #     super()._add_channel_params()
 
-    # def set_default_lutmap(self):
-    #     """
-    #     Set's the default lutmap for standard microwave drive pulses.
-    #     """
-    #     def_lm = self._def_lm
-    #     LutMap = OrderedDict()
-    #     for cw_idx, cw_key in enumerate(def_lm):
-    #         LutMap[cw_key] = (
-    #             'wave_ch1_cw{:03}'.format(cw_idx),
-    #             'wave_ch2_cw{:03}'.format(cw_idx),
-    #             'wave_ch3_cw{:03}'.format(cw_idx),
-    #             'wave_ch4_cw{:03}'.format(cw_idx))
-    #     self.LutMap(LutMap)
+    def _set_channel_amp(self, val):
+        AWG = self.AWG.get_instr()
+        for awg_ch in [self.channel_GI(), self.channel_GQ(),
+                       self.channel_DI(), self.channel_DQ()]:
+            AWG.set('ch{}_amp'.format(awg_ch), val)
+
+    def _get_channel_amp(self):
+        AWG = self.AWG.get_instr()
+        vals = []
+        for awg_ch in [self.channel_GI(), self.channel_GQ(),
+                       self.channel_DI(), self.channel_DQ()]:
+            vals.append(AWG.set('ch{}_amp'.format(awg_ch), val))
+        assert vals[0] == vals[1] == vals[2] == vals[3]
+        return vals[0]
