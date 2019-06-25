@@ -7,7 +7,7 @@ import warnings
 from pycqed.measurement.openql_experiments import single_qubit_oql as sqo
 import pycqed.measurement.openql_experiments.multi_qubit_oql as mqo
 from pycqed.measurement.openql_experiments import clifford_rb_oql as cl_oql
-from pycqed.measurement.openql_experiments import pygsti_oql
+# from pycqed.measurement.openql_experiments import pygsti_oql
 from pycqed.measurement.openql_experiments import openql_helpers as oqh
 from pycqed.analysis.tools import cryoscope_tools as ct
 
