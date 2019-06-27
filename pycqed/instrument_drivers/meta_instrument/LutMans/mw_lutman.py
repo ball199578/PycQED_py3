@@ -364,6 +364,13 @@ class QWG_MW_LutMan(Base_MW_LutMan):
                            docstring=('using the channel amp as additional'
                                       'parameter to allow rabi-type experiments without'
                                       'wave reloading. Should not be using VSM'))
+        # parameters related to codeword bits
+        self.add_parameter('bit_shift', unit='', vals=vals.Ints(0, 8),
+                           parameter_class=ManualParameter,
+                           initial_value=0)
+        self.add_parameter('bit_width', unit='', vals=vals.Ints(0, 8),
+                           parameter_class=ManualParameter,
+                           initial_value=0)
 
     def _set_channel_amp(self, val):
         AWG = self.AWG.get_instr()
@@ -377,6 +384,44 @@ class QWG_MW_LutMan(Base_MW_LutMan):
         assert val_Q == val_I
         return val_I
 
+    # NOT FINISHED YETTTT!!!!!!
+    def load_waveform_onto_AWG_lookuptable(self, waveform_name: str,
+                                           regenerate_waveforms: bool=False):
+        if regenerate_waveforms:
+            self.generate_standard_waveforms()
+        # waveform_name is pulse string (i.e. 'X180')
+        # waveforms is the tuple (G,D) with the actual pulseshape array
+        # codewords is the tuple (A,B) with the strings wave_chY_cwXXX
+        # codeword_int is the number XXX (see line above)
+        codeword_int = waveform_name
+        wf_name = self._get_wf_name_from_cw(codeword_int)
+        waveforms = self._wave_dict[codeword_int]
+        # get redundant codewords as a list
+        redundant_cw_list = get_redundant_codewords(codeword_int,
+                                                    bit_width=self.bit_width(),
+                                                    bit_shift=self.bit_shift())
+        # update all of them
+        for redundant_cw_idx in redundant_cw_list:
+            redundant_cw_I = 'wave_ch{}_cw{:03}'.format(self.channel_I(),
+                                                        redundant_cw_idx)
+            self.AWG.get_instr().set(redundant_cw_I, waveforms[0])
+            redundant_cw_Q = 'wave_ch{}_cw{:03}'.format(self.channel_Q(),
+                                                        redundant_cw_idx)
+            self.AWG.get_instr().set(redundant_cw_Q, waveforms[1])
+
+    def _get_wf_name_from_cw(self, codeword: int):
+        for idx, waveform in self.LutMap().items():
+            if int(idx) == codeword:
+                return waveform['name']
+        raise ValueError("Codeword {} not specified"
+                         " in LutMap".format(codeword))
+
+    def _get_cw_from_wf_name(self, wf_name: str):
+        for idx, waveform in self.LutMap().items():
+            if wf_name == waveform['name']:
+                return int(idx)
+        raise ValueError("Waveform {} not specified"
+                         " in LutMap".format(wf_name))
 
 class AWG8_MW_LutMan(Base_MW_LutMan):
 
