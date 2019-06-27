@@ -34,6 +34,7 @@ class Test_MW_LutMan(unittest.TestCase):
 
         self.CBox_MW_LutMan = mwl.CBox_MW_LutMan('CBox_MW_LutMan')
         self.QWG_MW_LutMan = mwl.QWG_MW_LutMan('QWG_MW_LutMan')
+        self.QWG_VSM_MW_LutMan = mwl.QWG_VSM_MW_LutMan('QWG_VSM_MW_LutMan')
 
     def test_program_hash_differs_AWG8_lutman(self):
 
